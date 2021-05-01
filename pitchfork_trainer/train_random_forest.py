@@ -32,4 +32,4 @@ if __name__ == "__main__":
 
         model.fit(df["content"], df["score"])
 
-        joblib.dump(model, f"./data/random_forest_{i}.joblib")
+        joblib.dump(model, f"./data/random_forest_{i}.joblib", compres=3)

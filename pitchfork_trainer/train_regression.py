@@ -34,4 +34,4 @@ if __name__ == "__main__":
 
         model.fit(df["content"], df["score"])
 
-        joblib.dump(model, f"./data/regression_{i}.joblib")
+        joblib.dump(model, f"./data/regression_{i}.joblib", compress=3)
