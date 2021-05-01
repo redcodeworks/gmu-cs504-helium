@@ -1,29 +1,33 @@
 #!/bin/python3
 import joblib
-import json, sys, os
+import json, sys, os, glob
 from dotenv import load_dotenv, find_dotenv
+
 load_dotenv(find_dotenv())
 from load_data import load_reviews
-from sklearn.model_selection import cross_val_score 
+from sklearn.model_selection import cross_val_score
 import argparse
 
 
-#  Excute with 'python3 score_model.py data/regression_1.joblib'
-if __name__ == "__main__":
+def parse_files(argpaths):
+    full_paths = [os.path.join(os.getcwd(), path) for path in args.path]
 
-    parser = argparse.ArgumentParser(description='Load Model')
-    parser.add_argument('model', metavar='m', type=str,
-                        help='joblib model to be scored')
+    files = set()
+
+    for path in full_paths:
+        if os.path.isfile(path):
+            files.add(path)
+        else:
+            files |= set(glob.glob(path + "/*" + args.extension))
+
+    return files
 
 
-    args = parser.parse_args()
+def score_model(file, df):
+    model = joblib.load(file)
 
-    model = joblib.load(args.model)
+    model_name = file.split("/")[-1]
 
-    model_name = args.model.split('/')[-1]
-
-    df = load_reviews()
-        
     scores = cross_val_score(
         model,
         df["content"],
@@ -34,10 +38,27 @@ if __name__ == "__main__":
 
     avg_score = (sum(scores) / len(scores)) * -1
 
-    with open(f"./data/{model_name}_score.txt", 'w') as f:
+    with open(f"./data/{model_name}_score.txt", "w") as f:
         f.write("Avg Score: {}\n".format(avg_score))
         f.write(str(scores))
-        
 
     print("Avg Score: ", avg_score)
     print(scores)
+
+
+#  Excute with 'python3 score_model.py data/regression_1.joblib'
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Load Model")
+    parser.add_argument(
+        "path", nargs="+", help="Model file path or a folder of model files."
+    )
+    parser.add_argument("-e", "--extension", default="", help="File extension filter")
+
+    args = parser.parse_args()
+
+    files = parse_files(args.path)
+
+    df = load_reviews()
+
+    [score_model(f, df) for f in files]
